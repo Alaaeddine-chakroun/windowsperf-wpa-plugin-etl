@@ -1,0 +1,113 @@
+﻿using Microsoft.Performance.SDK.Processing;
+using Microsoft.Diagnostics.Tracing;
+using Microsoft.Diagnostics.Tracing.Parsers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using wpa_plugin_etl.Tables;
+using Microsoft.Performance.SDK;
+
+namespace wpa_plugin_etl
+{
+    internal class WpaPluginEtlDataProcessor : CustomDataProcessor
+    {
+        private readonly string[] filePaths;
+        private IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, long>> fileContent;
+        private DataSourceInfo dataSourceInfo;
+
+        public WpaPluginEtlDataProcessor(
+           string[] filePaths,
+           ProcessorOptions options,
+           IApplicationEnvironment applicationEnvironment,
+           IProcessorEnvironment processorEnvironment)
+            : base(options, applicationEnvironment, processorEnvironment)
+        {
+            this.filePaths = filePaths;
+        }
+
+        public override DataSourceInfo GetDataSourceInfo()
+        {
+            return this.dataSourceInfo;
+        }
+
+        protected override Task ProcessAsyncCore(
+           IProgress<int> progress,
+           CancellationToken cancellationToken)
+        {
+            Timestamp startTime = Timestamp.MaxValue;
+            Timestamp endTime = Timestamp.MinValue;
+            DateTime firstEvent = DateTime.MinValue;
+
+            var list = new List<Tuple<string, DateTime, Timestamp, Timestamp, long>>();
+            foreach (var path in this.filePaths)
+            {
+                long lastEndTime = 0;
+                using (var source = new ETWTraceEventSource(path))
+                {
+                    var parser = new DynamicTraceEventParser(source);
+                    parser.All += delegate (TraceEvent data)
+                    {
+                        if (data.ProviderName.IndexOf("WindowsPerf") != -1)
+                        {
+                            Debug.WriteLine("GOT EVENT: " + data.PayloadValue(0)); //data.ToString());
+
+                            DateTime time = data.TimeStamp;
+                            Timestamp stamp = Timestamp.FromNanoseconds(time.Ticks * 100);
+
+                            if (stamp < startTime)
+                            {
+                                startTime = stamp;
+                                lastEndTime = 0;
+                                firstEvent = time;
+                            }
+                            if (stamp > endTime)
+                            {
+                                endTime = stamp;
+                            }
+
+                            list.Add(new Tuple<String, DateTime, Timestamp, Timestamp, long>(data.ProviderName,
+                                data.TimeStamp,
+                                Timestamp.FromNanoseconds(lastEndTime),
+                                Timestamp.FromNanoseconds(stamp.ToNanoseconds - startTime.ToNanoseconds),
+                                (long)((int)data.PayloadValue(0))));
+                            lastEndTime = stamp.ToNanoseconds - startTime.ToNanoseconds;
+                        }
+                    };
+                    source.Process();
+                }
+
+                this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
+            }
+
+            this.fileContent = new List<Tuple<string, DateTime, Timestamp, Timestamp, long>>(list);
+            
+            this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
+
+            progress.Report(100);
+            return Task.CompletedTask;
+        }
+
+        protected override void BuildTableCore(
+            TableDescriptor tableDescriptor,
+            ITableBuilder tableBuilder)
+        {
+            var type = tableDescriptor.ExtendedData["Type"] as Type;
+
+            if (type != null)
+            {
+                var table = InstantiateTable(type);
+                table.Build(tableBuilder);
+            }
+        }
+
+        private TableBase InstantiateTable(Type tableType)
+        {
+            var instance = Activator.CreateInstance(tableType, new[] { this.fileContent, });
+            return (TableBase)instance;
+        }
+    }
+}
