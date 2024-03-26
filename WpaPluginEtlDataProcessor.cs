@@ -46,7 +46,8 @@ namespace wpa_plugin_etl
     internal class WpaPluginEtlDataProcessor : CustomDataProcessor
     {
         private readonly string[] filePaths;
-        private IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>> fileContent;
+        private IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>> driver_fileContent;
+        private IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventApp>> app_fileContent;
         private DataSourceInfo dataSourceInfo;
 
         public WpaPluginEtlDataProcessor(
@@ -72,26 +73,24 @@ namespace wpa_plugin_etl
             Timestamp endTime = Timestamp.MinValue;
             DateTime firstEvent = DateTime.MinValue;
 
-            var list = new List<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>>();
+            var driverList = new List<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>>();
+            var appList = new List<Tuple<string, DateTime, Timestamp, ReadGPCEventApp>>();
+
             foreach (var path in this.filePaths)
             {
-                long lastEndTime = 0;
                 using (var source = new ETWTraceEventSource(path))
                 {
                     var parser = new DynamicTraceEventParser(source);
                     parser.All += delegate (TraceEvent data)
                     {
-                        if (data.ProviderName.IndexOf("WindowsPerf") != -1)
+                        if (data.ProviderName.IndexOf("WindowsPerf Driver") != -1)
                         {
-                            //Debug.WriteLine("GOT EVENT: " + data.ToString());
-
                             DateTime time = data.TimeStamp;
                             Timestamp stamp = Timestamp.FromNanoseconds(time.Ticks * 100);
 
                             if (stamp < startTime)
                             {
                                 startTime = stamp;
-                                lastEndTime = 0;
                                 firstEvent = time;
                             }
                             if (stamp > endTime)
@@ -99,19 +98,44 @@ namespace wpa_plugin_etl
                                 endTime = stamp;
                             }
 
-                            ReadGPCEvent @event = new ReadGPCEvent();
+                            ReadGPCEventDriver @event = new ReadGPCEventDriver();
                             @event.Core = (ulong)(long)data.PayloadValue(0);
                             @event.Event = (uint)(int)data.PayloadValue(1);
                             @event.GPCIdx = (uint)(int)data.PayloadValue(2);
                             @event.Value = (ulong)(long)data.PayloadValue(3);
 
-                            list.Add(new Tuple<String, DateTime, Timestamp, Timestamp, ReadGPCEvent>(
+                            driverList.Add(new Tuple<String, DateTime, Timestamp, ReadGPCEventDriver>(
                                 String.Format("{0:X8}",@event.Event),
                                 data.TimeStamp,
-                                Timestamp.FromNanoseconds(lastEndTime),
                                 Timestamp.FromNanoseconds(stamp.ToNanoseconds - startTime.ToNanoseconds),
                                 @event));
-                            lastEndTime = stamp.ToNanoseconds - startTime.ToNanoseconds;
+                        } else if(data.ProviderName.IndexOf("WindowsPerf App") != -1)
+                        {
+                            DateTime time = data.TimeStamp;
+                            Timestamp stamp = Timestamp.FromNanoseconds(time.Ticks * 100);
+
+                            if (stamp < startTime)
+                            {
+                                startTime = stamp;
+                                firstEvent = time;
+                            }
+                            if (stamp > endTime)
+                            {
+                                endTime = stamp;
+                            }
+
+                            ReadGPCEventApp @event = new ReadGPCEventApp();
+                            @event.Core = (ulong)(long)data.PayloadValue(0);
+                            @event.Event = (String)data.PayloadValue(1);
+                            @event.EventIdx = (uint)(int)data.PayloadValue(2);
+                            @event.EventNote = (String)data.PayloadValue(3);
+                            @event.Value = (ulong)(long)data.PayloadValue(4);
+
+                            appList.Add(new Tuple<String, DateTime, Timestamp, ReadGPCEventApp>(
+                                String.Format("{0:X8}", @event.Event),
+                                data.TimeStamp,
+                                Timestamp.FromNanoseconds(stamp.ToNanoseconds - startTime.ToNanoseconds),
+                                @event));
                         }
                     };
                     source.Process();
@@ -120,8 +144,9 @@ namespace wpa_plugin_etl
                 this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
             }
 
-            this.fileContent = new List<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>>(list);
-            
+            this.driver_fileContent = new List<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>>(driverList);
+            this.app_fileContent = new List<Tuple<string, DateTime, Timestamp, ReadGPCEventApp>>(appList);
+
             this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
 
             progress.Report(100);
@@ -133,18 +158,28 @@ namespace wpa_plugin_etl
             ITableBuilder tableBuilder)
         {
             var type = tableDescriptor.ExtendedData["Type"] as Type;
-
-            if (type != null)
+            
+            if (type != null && tableDescriptor.Guid == ReadGPCDriverTable.TableDescriptor.Guid)
             {
-                var table = InstantiateTable(type);
+                var table = InstantiateDriverTable(type);
+                table.Build(tableBuilder);
+            } else if(type != null && tableDescriptor.Guid == ReadGPCAppTable.TableDescriptor.Guid)
+            {
+                var table = InstantiateAppTable(type);
                 table.Build(tableBuilder);
             }
         }
 
-        private ReadGPCTable InstantiateTable(Type tableType)
+        private ReadGPCDriverTable InstantiateDriverTable(Type tableType)
         {
-            var instance = Activator.CreateInstance(tableType, new[] { this.fileContent, });
-            return (ReadGPCTable)instance;
+            var instance = Activator.CreateInstance(tableType, new[] { this.driver_fileContent, });
+            return (ReadGPCDriverTable)instance;
+        }
+
+        private ReadGPCAppTable InstantiateAppTable(Type tableType)
+        {
+            var instance = Activator.CreateInstance(tableType, new[] { this.app_fileContent, });
+            return (ReadGPCAppTable)instance;
         }
     }
 }

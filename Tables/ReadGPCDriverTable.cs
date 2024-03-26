@@ -36,9 +36,9 @@ using System.Collections.Generic;
 namespace wpa_plugin_etl.Tables
 {
     [Table]
-    public sealed class ReadGPCTable
+    public sealed class ReadGPCDriverTable
     {
-        public ReadGPCTable(IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>> events)
+        public ReadGPCDriverTable(IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>> events)
         {
             this.Events = events;
         }
@@ -86,7 +86,7 @@ namespace wpa_plugin_etl.Tables
              AggregationMode = AggregationMode.Sum,
              Width = 150 });
 
-        public IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>> Events { get; }
+        public IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>> Events { get; }
 
         internal void Build(ITableBuilder tableBuilder)
         {
@@ -94,13 +94,12 @@ namespace wpa_plugin_etl.Tables
 
             var eventProjection = baseProjection.Compose(x => x.Item1);
             var timeProjection = baseProjection.Compose(x => x.Item3);
-            var endTimeProjection = baseProjection.Compose(x => x.Item4);
 
-            var coreProjection = baseProjection.Compose(x => x.Item5.Core);
-            var GPCIdxProjection = baseProjection.Compose(x => x.Item5.GPCIdx);
-            var valueProjection = baseProjection.Compose(x => x.Item5.Value);
+            var coreProjection = baseProjection.Compose(x => x.Item4.Core);
+            var GPCIdxProjection = baseProjection.Compose(x => x.Item4.GPCIdx);
+            var valueProjection = baseProjection.Compose(x => x.Item4.Value);
             
-            var config = new TableConfiguration("Values Table")
+            var config = new TableConfiguration("PMU Data")
             {
                 Columns = new[]
                 {
@@ -110,7 +109,6 @@ namespace wpa_plugin_etl.Tables
                     TableConfiguration.LeftFreezeColumn,
                     GPCIdxColumn,
                     TimeColumn,
-                    EndTimeColumn,
                     TableConfiguration.GraphColumn,
                     TableConfiguration.RightFreezeColumn,
                     ValueColumn,
@@ -118,14 +116,12 @@ namespace wpa_plugin_etl.Tables
             };
 
             config.AddColumnRole(ColumnRole.StartTime, TimeColumn.Metadata.Guid);
-            config.AddColumnRole(ColumnRole.EndTime, EndTimeColumn.Metadata.Guid);
 
             _ = tableBuilder.AddTableConfiguration(config)
                .SetDefaultTableConfiguration(config)
                .SetRowCount(this.Events.Count)
                .AddColumn(EventColumn, eventProjection)
                .AddColumn(TimeColumn, timeProjection)
-               .AddColumn(EndTimeColumn, endTimeProjection)
                .AddColumn(CoreColumn, coreProjection)
                .AddColumn(GPCIdxColumn, GPCIdxProjection)
                .AddColumn(ValueColumn, valueProjection);            

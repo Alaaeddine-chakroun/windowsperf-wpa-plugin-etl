@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace wpa_plugin_etl
 {
-    public class ReadGPCEvent
+    public class ReadGPCEventDriver
     {
         public ulong Core { get; set; }
         public uint Event { get; set; }
         public uint GPCIdx { get; set; }
         public ulong Value { get; set; }
 
-        public ReadGPCEvent() { }
+        public ReadGPCEventDriver() { }
     }
 }

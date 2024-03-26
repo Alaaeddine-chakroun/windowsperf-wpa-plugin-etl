@@ -156,8 +156,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ReadGPCEvent.cs" />
-    <Compile Include="Tables\ReadGPCTable.cs" />
+    <Compile Include="ReadGPCEventApp.cs" />
+    <Compile Include="ReadGPCEventDriver.cs" />
+    <Compile Include="Tables\ReadGPCAppTable.cs" />
+    <Compile Include="Tables\ReadGPCDriverTable.cs" />
     <Compile Include="WpaPluginEtlDataProcessor.cs" />
     <Compile Include="WpaPluginEtlProcessingSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
