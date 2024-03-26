@@ -156,7 +156,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Tables\TableBase.cs" />
+    <Compile Include="ReadGPCEvent.cs" />
+    <Compile Include="Tables\ReadGPCTable.cs" />
     <Compile Include="WpaPluginEtlDataProcessor.cs" />
     <Compile Include="WpaPluginEtlProcessingSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

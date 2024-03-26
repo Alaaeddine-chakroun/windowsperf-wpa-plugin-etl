@@ -46,7 +46,7 @@ namespace wpa_plugin_etl
     internal class WpaPluginEtlDataProcessor : CustomDataProcessor
     {
         private readonly string[] filePaths;
-        private IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, long>> fileContent;
+        private IReadOnlyList<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>> fileContent;
         private DataSourceInfo dataSourceInfo;
 
         public WpaPluginEtlDataProcessor(
@@ -72,7 +72,7 @@ namespace wpa_plugin_etl
             Timestamp endTime = Timestamp.MinValue;
             DateTime firstEvent = DateTime.MinValue;
 
-            var list = new List<Tuple<string, DateTime, Timestamp, Timestamp, long>>();
+            var list = new List<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>>();
             foreach (var path in this.filePaths)
             {
                 long lastEndTime = 0;
@@ -83,7 +83,7 @@ namespace wpa_plugin_etl
                     {
                         if (data.ProviderName.IndexOf("WindowsPerf") != -1)
                         {
-                            Debug.WriteLine("GOT EVENT: " + data.PayloadValue(0)); //data.ToString());
+                            //Debug.WriteLine("GOT EVENT: " + data.ToString());
 
                             DateTime time = data.TimeStamp;
                             Timestamp stamp = Timestamp.FromNanoseconds(time.Ticks * 100);
@@ -99,11 +99,18 @@ namespace wpa_plugin_etl
                                 endTime = stamp;
                             }
 
-                            list.Add(new Tuple<String, DateTime, Timestamp, Timestamp, long>(data.ProviderName,
+                            ReadGPCEvent @event = new ReadGPCEvent();
+                            @event.Core = (ulong)(long)data.PayloadValue(0);
+                            @event.Event = (uint)(int)data.PayloadValue(1);
+                            @event.GPCIdx = (uint)(int)data.PayloadValue(2);
+                            @event.Value = (ulong)(long)data.PayloadValue(3);
+
+                            list.Add(new Tuple<String, DateTime, Timestamp, Timestamp, ReadGPCEvent>(
+                                String.Format("{0:X8}",@event.Event),
                                 data.TimeStamp,
                                 Timestamp.FromNanoseconds(lastEndTime),
                                 Timestamp.FromNanoseconds(stamp.ToNanoseconds - startTime.ToNanoseconds),
-                                (long)((int)data.PayloadValue(0))));
+                                @event));
                             lastEndTime = stamp.ToNanoseconds - startTime.ToNanoseconds;
                         }
                     };
@@ -113,7 +120,7 @@ namespace wpa_plugin_etl
                 this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
             }
 
-            this.fileContent = new List<Tuple<string, DateTime, Timestamp, Timestamp, long>>(list);
+            this.fileContent = new List<Tuple<string, DateTime, Timestamp, Timestamp, ReadGPCEvent>>(list);
             
             this.dataSourceInfo = new DataSourceInfo(0, (endTime - startTime).ToNanoseconds, firstEvent.ToUniversalTime());
 
@@ -134,10 +141,10 @@ namespace wpa_plugin_etl
             }
         }
 
-        private TableBase InstantiateTable(Type tableType)
+        private ReadGPCTable InstantiateTable(Type tableType)
         {
             var instance = Activator.CreateInstance(tableType, new[] { this.fileContent, });
-            return (TableBase)instance;
+            return (ReadGPCTable)instance;
         }
     }
 }
