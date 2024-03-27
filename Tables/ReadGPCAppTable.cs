@@ -29,12 +29,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Microsoft.Performance.SDK.Processing;
-using Microsoft.Performance.SDK;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Performance.SDK.Extensibility;
 
 namespace wpa_plugin_etl.Tables

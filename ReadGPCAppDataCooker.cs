@@ -32,13 +32,9 @@ using Microsoft.Performance.SDK.Extensibility.DataCooking;
 using Microsoft.Performance.SDK.Extensibility;
 using Microsoft.Performance.SDK;
 using Microsoft.Performance.SDK.Extensibility.DataCooking.SourceDataCooking;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace wpa_plugin_etl
 {
