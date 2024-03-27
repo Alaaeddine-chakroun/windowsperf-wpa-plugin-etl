@@ -28,23 +28,51 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+using Microsoft.Performance.SDK.Extensibility.DataCooking;
 using Microsoft.Performance.SDK.Extensibility;
+using Microsoft.Performance.SDK;
+using Microsoft.Performance.SDK.Extensibility.DataCooking.SourceDataCooking;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace wpa_plugin_etl
 {
-    public class ReadGPCEventDriver
+    public class ReadGPCAppDataCooker : SourceDataCooker<ReadGPCEvent, WpaPluginEtlSourceParser, string>
     {
-        public ulong Core { get; set; }
-        public uint Event { get; set; }
-        public uint GPCIdx { get; set; }
-        public ulong Value { get; set; }
+        public static readonly DataCookerPath DataCookerPath = DataCookerPath.ForSource(nameof(WpaPluginEtlSourceParser), nameof(ReadGPCAppDataCooker));
+        private readonly List<ReadGPCEvent> eventsList;
 
-        public ReadGPCEventDriver() { }
+        [DataOutput]
+        public IReadOnlyList<ReadGPCEvent> Events { get; }
+
+        public override string Description => "Passes the ReadGPC event data from app";
+
+        public ReadGPCAppDataCooker() : base(ReadGPCAppDataCooker.DataCookerPath)
+        {
+            eventsList = new List<ReadGPCEvent>();
+            Events = new ReadOnlyCollection<ReadGPCEvent>(eventsList);
+        }
+
+        public override ReadOnlyHashSet<string> DataKeys =>
+            new ReadOnlyHashSet<string>(
+                new HashSet<string>
+                {
+                    "WindowsPerf App",
+                    nameof(ReadGPCEvent)
+                });
+
+        public override DataProcessingResult CookDataElement(ReadGPCEvent data, WpaPluginEtlSourceParser context, CancellationToken cancellationToken)
+        {
+            if (data.Key.IndexOf("WindowsPerf App") != -1)
+            {
+                eventsList.Add(data);
+            }
+            return DataProcessingResult.Processed;
+        }
     }
 }

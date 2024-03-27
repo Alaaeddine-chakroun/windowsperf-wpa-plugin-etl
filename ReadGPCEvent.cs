@@ -28,17 +28,40 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-using Microsoft.Performance.SDK.Processing;
-using Microsoft.Performance.SDK.Extensibility.SourceParsing;
+using Microsoft.Performance.SDK;
+using Microsoft.Performance.SDK.Extensibility;
+using System;
 
 namespace wpa_plugin_etl
 {
-    public class WpaPluginEtlDataProcessor : CustomDataProcessorWithSourceParser<ReadGPCEvent, WpaPluginEtlSourceParser, string>
+    public class ReadGPCEvent : IKeyedDataType<string>
     {
-        public WpaPluginEtlDataProcessor(
-            ISourceParser<ReadGPCEvent, WpaPluginEtlSourceParser, string> sourceParser,
-            ProcessorOptions options,
-            IApplicationEnvironment applicationEnvironment,
-            IProcessorEnvironment processorEnvironment) : base(sourceParser, options, applicationEnvironment, processorEnvironment) { }
+        public ulong Core { get; set; }
+        public String Event { get; set; }
+        public uint EventIdx { get; set; }
+        public uint GPCIdx { get; set; }
+        public String EventNote { get; set; }
+        public ulong Value { get; set; }
+        public string Key { get; set; }
+        public Timestamp Time { get; set; }
+
+        public ReadGPCEvent() { }
+
+        public ReadGPCEvent(ReadGPCEvent ev)
+        {
+            Core = ev.Core;
+            Event = ev.Event;
+            EventIdx = ev.EventIdx;
+            EventNote = ev.EventNote;
+            Value = ev.Value;
+            GPCIdx = ev.GPCIdx;
+            Key = ev.Key;
+            Time = ev.Time;
+        }
+
+        public string GetKey()
+        {
+            return this.Key;
+        }
     }
 }

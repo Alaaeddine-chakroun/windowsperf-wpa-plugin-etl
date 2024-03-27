@@ -28,7 +28,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-using Microsoft.Performance.SDK;
+using Microsoft.Performance.SDK.Extensibility;
 using Microsoft.Performance.SDK.Processing;
 using System;
 using System.Collections.Generic;
@@ -36,34 +36,25 @@ using System.Collections.Generic;
 namespace wpa_plugin_etl.Tables
 {
     [Table]
-    public sealed class ReadGPCDriverTable
+    public static class ReadGPCDriverTable
     {
-        public ReadGPCDriverTable(IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>> events)
-        {
-            this.Events = events;
-        }
+        public static readonly DataCookerPath dataCookerPath = DataCookerPath.ForSource(nameof(WpaPluginEtlSourceParser), nameof(ReadGPCDriverDataCooker));
+
         public static TableDescriptor TableDescriptor => new TableDescriptor(
                     Guid.Parse("{E122471E-25A6-4F7F-BE6C-E62774FD0410}"),
-                    "WindowsPerf GPC Data",
+                    "WindowsPerf GPC Data from Driver",
                     "GPC data gathered with WindowsPerf Driver",
-                    "PMU");
+                    "PMU from WindowsPerf",
+                    requiredDataCookers: new List<DataCookerPath> { ReadGPCDriverTable.dataCookerPath });
 
         private static readonly ColumnConfiguration EventColumn = new ColumnConfiguration(
            new ColumnMetadata(new Guid("{E7907471-C6E2-41D2-AAA2-E4D790EB8676}"), "Event Index", "The raw index of the event"),
            new UIHints { Width = 150 });
 
         private static readonly ColumnConfiguration TimeColumn = new ColumnConfiguration(
-           new ColumnMetadata(new Guid("{E3056A08-D44D-4CD6-8158-503BDAEF899C}"), "Start Time", "The start time of the event"),
+           new ColumnMetadata(new Guid("{E3056A08-D44D-4CD6-8158-503BDAEF899C}"), "Time", "The time of the event"),
            new UIHints { 
-               IsVisible = false,
-               Width = 150 });
-
-        private static readonly ColumnConfiguration EndTimeColumn = new ColumnConfiguration(
-           new ColumnMetadata(new Guid("{4A9464D3-9A17-4E3C-86D9-9E57C97785AE}"), "End Time", "The time the event ended"),
-           new UIHints
-           {
-               IsVisible = false,
-               Width = 150
+               IsVisible = true,
            });
 
         private static readonly ColumnConfiguration CoreColumn = new ColumnConfiguration(
@@ -86,20 +77,18 @@ namespace wpa_plugin_etl.Tables
              AggregationMode = AggregationMode.Sum,
              Width = 150 });
 
-        public IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventDriver>> Events { get; }
-
-        internal void Build(ITableBuilder tableBuilder)
+        public static void Build(ITableBuilder tableBuilder, IReadOnlyList<ReadGPCEvent> data)
         {
-            var baseProjection = Projection.Index(this.Events);
+            var baseProjection = Projection.Index(data);
 
-            var eventProjection = baseProjection.Compose(x => x.Item1);
-            var timeProjection = baseProjection.Compose(x => x.Item3);
+            var eventProjection = baseProjection.Compose(x => x.Event);
+            var timeProjection = baseProjection.Compose(x => x.Time);
 
-            var coreProjection = baseProjection.Compose(x => x.Item4.Core);
-            var GPCIdxProjection = baseProjection.Compose(x => x.Item4.GPCIdx);
-            var valueProjection = baseProjection.Compose(x => x.Item4.Value);
+            var coreProjection = baseProjection.Compose(x => x.Core);
+            var GPCIdxProjection = baseProjection.Compose(x => x.GPCIdx);
+            var valueProjection = baseProjection.Compose(x => x.Value);
             
-            var config = new TableConfiguration("PMU Data")
+            var config = new TableConfiguration("Driver PMU Data")
             {
                 Columns = new[]
                 {
@@ -115,17 +104,30 @@ namespace wpa_plugin_etl.Tables
                 },
             };
 
-            config.AddColumnRole(ColumnRole.StartTime, TimeColumn.Metadata.Guid);
+            config.AddColumnRole(ColumnRole.StartTime, TimeColumn);
 
             _ = tableBuilder.AddTableConfiguration(config)
                .SetDefaultTableConfiguration(config)
-               .SetRowCount(this.Events.Count)
+               .SetRowCount(data.Count)
                .AddColumn(EventColumn, eventProjection)
-               .AddColumn(TimeColumn, timeProjection)
                .AddColumn(CoreColumn, coreProjection)
                .AddColumn(GPCIdxColumn, GPCIdxProjection)
+               .AddColumn(TimeColumn, timeProjection)
                .AddColumn(ValueColumn, valueProjection);            
             
+        }
+
+        public static void BuildTable(ITableBuilder tableBuilder, IDataExtensionRetrieval dataExtensionRetrieval)
+        {
+            IReadOnlyList<ReadGPCEvent> lineItems = dataExtensionRetrieval.QueryOutput<IReadOnlyList<ReadGPCEvent>>(
+                    new DataOutputPath(ReadGPCDriverDataCooker.DataCookerPath, nameof(ReadGPCDriverDataCooker.Events))
+                );
+            if (lineItems.Count == 0)
+            {
+                return;
+            }
+
+            Build(tableBuilder, lineItems);
         }
     }
 }

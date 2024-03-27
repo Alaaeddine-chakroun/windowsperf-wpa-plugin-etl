@@ -35,32 +35,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Performance.SDK.Extensibility;
 
 namespace wpa_plugin_etl.Tables
 {
     [Table]
-    internal class ReadGPCAppTable
+    public static class ReadGPCAppTable
     {
-        public ReadGPCAppTable(IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventApp>> events)
-        {
-            this.Events = events;
-        }
+        public static readonly DataCookerPath dataCookerPath = DataCookerPath.ForSource(nameof(WpaPluginEtlSourceParser), nameof(ReadGPCAppDataCooker));
+
         public static TableDescriptor TableDescriptor => new TableDescriptor(
                     Guid.Parse("{CC0CDEC2-710D-4955-8C3C-CEBF606960D2}"),
-                    "WindowsPerf GPC Data",
+                    "WindowsPerf GPC Data from App",
                     "GPC data gathered with WindowsPerf App",
-                    "PMU");
+                    "PMU from WindowsPerf",
+                    requiredDataCookers: new List<DataCookerPath> { ReadGPCAppTable.dataCookerPath });
 
         private static readonly ColumnConfiguration EventIdxColumn = new ColumnConfiguration(
            new ColumnMetadata(new Guid("{58A54596-0A1A-4F59-91E5-4F231F80F06E}"), "Event Index", "The raw index of the event"),
            new UIHints { Width = 150 });
 
         private static readonly ColumnConfiguration TimeColumn = new ColumnConfiguration(
-           new ColumnMetadata(new Guid("{61979965-B0B8-4529-AE52-3C6E2A58BA8A}"), "Start Time", "The start time of the event"),
+           new ColumnMetadata(new Guid("{61979965-B0B8-4529-AE52-3C6E2A58BA8A}"), "Time", "The time of the event"),
            new UIHints
            {
                IsVisible = false,
-               Width = 150
            });
 
         private static readonly ColumnConfiguration CoreColumn = new ColumnConfiguration(
@@ -92,21 +91,19 @@ namespace wpa_plugin_etl.Tables
              Width = 150
          });
 
-        public IReadOnlyList<Tuple<string, DateTime, Timestamp, ReadGPCEventApp>> Events { get; }
-
-        internal void Build(ITableBuilder tableBuilder)
+        public static void Build(ITableBuilder tableBuilder, IReadOnlyList<ReadGPCEvent> data)
         {
-            var baseProjection = Projection.Index(this.Events);
+            var baseProjection = Projection.Index(data);
 
-            var eventProjection = baseProjection.Compose(x => x.Item4.Event);
-            var timeProjection = baseProjection.Compose(x => x.Item3);
+            var eventProjection = baseProjection.Compose(x => x.Event);
+            var timeProjection = baseProjection.Compose(x => x.Time);
 
-            var coreProjection = baseProjection.Compose(x => x.Item4.Core);
-            var eventIdxProjection = baseProjection.Compose(x => x.Item4.EventIdx);
-            var eventNoteProjection = baseProjection.Compose(x => x.Item4.EventNote);
-            var valueProjection = baseProjection.Compose(x => x.Item4.Value);
+            var coreProjection = baseProjection.Compose(x => x.Core);
+            var eventIdxProjection = baseProjection.Compose(x => x.EventIdx);
+            var eventNoteProjection = baseProjection.Compose(x => x.EventNote);
+            var valueProjection = baseProjection.Compose(x => x.Value);
 
-            var config = new TableConfiguration("PMU Data")
+            var config = new TableConfiguration("App PMU Data")
             {
                 Columns = new[]
                 {
@@ -123,11 +120,11 @@ namespace wpa_plugin_etl.Tables
                 },
             };
 
-            config.AddColumnRole(ColumnRole.StartTime, TimeColumn.Metadata.Guid);
+            config.AddColumnRole(ColumnRole.StartTime, TimeColumn);
 
             _ = tableBuilder.AddTableConfiguration(config)
                .SetDefaultTableConfiguration(config)
-               .SetRowCount(this.Events.Count)
+               .SetRowCount(data.Count)
                .AddColumn(EventColumn, eventProjection)
                .AddColumn(TimeColumn, timeProjection)
                .AddColumn(CoreColumn, coreProjection)
@@ -135,6 +132,19 @@ namespace wpa_plugin_etl.Tables
                .AddColumn(EventNoteColumn, eventNoteProjection)
                .AddColumn(ValueColumn, valueProjection);
 
+        }
+
+        public static void BuildTable(ITableBuilder tableBuilder, IDataExtensionRetrieval dataExtensionRetrieval)
+        {
+            IReadOnlyList<ReadGPCEvent> lineItems = dataExtensionRetrieval.QueryOutput<IReadOnlyList<ReadGPCEvent>>(
+                    new DataOutputPath(ReadGPCAppDataCooker.DataCookerPath, nameof(ReadGPCAppDataCooker.Events))
+                );
+            if (lineItems.Count == 0)
+            {
+                return;
+            }
+
+            Build(tableBuilder, lineItems);
         }
     }
 }

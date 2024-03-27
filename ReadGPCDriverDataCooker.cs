@@ -28,22 +28,55 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+using Microsoft.Performance.SDK;
+using Microsoft.Performance.SDK.Extensibility;
+using Microsoft.Performance.SDK.Extensibility.DataCooking;
+using Microsoft.Performance.SDK.Extensibility.DataCooking.SourceDataCooking;
+using Microsoft.Performance.SDK.Processing;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace wpa_plugin_etl
 {
-    public class ReadGPCEventApp
+    public class ReadGPCDriverDataCooker : SourceDataCooker<ReadGPCEvent, WpaPluginEtlSourceParser, string>
     {
-        public ulong Core { get; set; }
-        public String Event { get; set; }
-        public uint EventIdx { get; set; }
-        public String EventNote { get; set; }
-        public ulong Value { get; set; }
+        public static readonly DataCookerPath DataCookerPath = DataCookerPath.ForSource(nameof(WpaPluginEtlSourceParser), nameof(ReadGPCDriverDataCooker));
+        private readonly List<ReadGPCEvent> eventsList;
 
-        public ReadGPCEventApp() { }
+        [DataOutput]
+        public IReadOnlyList<ReadGPCEvent> Events { get; }
+
+        public override string Description => "Passes the ReadGPC event data from driver";
+
+        public ReadGPCDriverDataCooker() : base(ReadGPCDriverDataCooker.DataCookerPath)
+        {
+            eventsList = new List<ReadGPCEvent>();
+            Events = new ReadOnlyCollection<ReadGPCEvent>(eventsList);
+        }
+
+        
+        public override ReadOnlyHashSet<string> DataKeys =>
+            new ReadOnlyHashSet<string>(
+                new HashSet<string>
+                {
+                    "WindowsPerf Driver",
+                    nameof(ReadGPCEvent)
+                });
+        
+        public override DataProcessingResult CookDataElement(ReadGPCEvent data, WpaPluginEtlSourceParser context, CancellationToken cancellationToken)
+        {
+            if (data.Key.IndexOf("WindowsPerf Driver") != -1)
+            {
+                eventsList.Add(data);
+            }
+            return DataProcessingResult.Processed;
+        }
     }
 }
