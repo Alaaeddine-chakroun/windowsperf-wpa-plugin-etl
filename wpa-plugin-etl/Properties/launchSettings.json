@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Debug": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\wpa.exe",
+      "commandLineArgs": "-nodefault -addsearchdir \"%USERPROFILE%\\devProjects\\wpa-plugin-etl\\wpa-plugin-etl\\bin\\Debug\\netstandard2.0\""
+    },
+    "Release": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\wpa.exe",
+      "commandLineArgs": "-nodefault -addsearchdir \"%USERPROFILE%\\devProjects\\wpa-plugin-etl\\wpa-plugin-etl\\bin\\Release\\netstandard2.0\""
+    }
+  }
+}
