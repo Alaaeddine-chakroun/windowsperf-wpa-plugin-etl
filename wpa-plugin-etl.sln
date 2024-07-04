@@ -1,9 +1,9 @@
-﻿
+﻿﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.10.34707.107
+VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wpa-plugin-etl", "wpa-plugin-etl.csproj", "{B7C4374E-0236-4C7C-9565-9A142858F381}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wpa-plugin-etl", "wpa-plugin-etl\wpa-plugin-etl.csproj", "{4C34C05A-F6CB-4027-9D41-B3D0DC1F99DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B7C4374E-0236-4C7C-9565-9A142858F381}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B7C4374E-0236-4C7C-9565-9A142858F381}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7C4374E-0236-4C7C-9565-9A142858F381}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B7C4374E-0236-4C7C-9565-9A142858F381}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C34C05A-F6CB-4027-9D41-B3D0DC1F99DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C34C05A-F6CB-4027-9D41-B3D0DC1F99DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C34C05A-F6CB-4027-9D41-B3D0DC1F99DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C34C05A-F6CB-4027-9D41-B3D0DC1F99DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C4B5BEAE-EE6A-4348-8A91-35F35D7303CA}
+		SolutionGuid = {8DFBE6EE-B90C-4BD3-BA88-EE4702951389}
 	EndGlobalSection
 EndGlobal
