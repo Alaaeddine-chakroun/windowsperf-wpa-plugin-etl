@@ -3,6 +3,8 @@
     <IncludeAssemblies>
 		Microsoft.Diagnostics.Tracing.TraceEvent
 		Microsoft.Diagnostics.FastSerialization
+		Dia2Lib
+		TraceReloggerLib
 	</IncludeAssemblies>
   </Costura>
 </Weavers>
