@@ -4,7 +4,7 @@
 
 # Introduction
 
-The [WPA-plugin-etl](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl is a dedicated plugin developed for the Windows Performance Analyzer (WPA). Its primary function is to interpret and present event traces that have been injected by the WindowsPerf ETW (Event Tracing for Windows). These events can be injected through two main sources: the [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf?ref_type=heads) application and the [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver?ref_type=heads). The `wperf` application is a user-mode application, while the `wperf-driver` is a Windows Kernel Driver. 
+The [WPA-plugin-etl](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl) is a dedicated plugin developed for the Windows Performance Analyzer (WPA). Its primary function is to interpret and present event traces that have been injected by the WindowsPerf ETW (Event Tracing for Windows). These events can be injected through two main sources: the [wperf](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf?ref_type=heads) application and the [wperf-driver](https://gitlab.com/Linaro/WindowsPerf/windowsperf/-/tree/main/wperf-driver?ref_type=heads). The `wperf` application is a user-mode application, while the `wperf-driver` is a Windows Kernel Driver. 
 
 Together, they provide a comprehensive view of system performance and behavior, making the `WPA-plugin-etl` a valuable tool for system analysis and debugging. This plugin enhances the capabilities of WPA, allowing users to delve deeper into the Arm core and uncore PMU performance characteristics of their Windows on Arm systems. It’s an essential tool for anyone looking to optimize system performance or troubleshoot issues.
 
@@ -19,12 +19,12 @@ WPA is included in the Windows Assessment and Deployment Kit (Windows ADK) that 
 
 > :warning: The wperf WPA plugin requires a WPA version of `11.0.7.2` or higher.
 
-Once downloaded, make sure that "Windows Performance Toolkit" checkbox is checked under "Select the features you want to install".
+Once downloaded, make sure that the "Windows Performance Toolkit" checkbox is checked under "Select the features you want to install".
 
 ## Plugin releases
 
 WPA-plugin is built on the [Microsoft Performance Toolkit SDK](https://github.com/microsoft/microsoft-performance-toolkit-sdk) and is shipped as a set of Dynamic link libraries (DLLs).
-Go to `WPA-plugin-etl` [releases](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl/-/releases) to download latest plugin binaries.
+Go to `WPA-plugin-etl` [releases](https://gitlab.com/Linaro/WindowsPerf/wpa-plugin-etl/-/releases) to download the latest plugin binaries.
 
 ## Installation instructions in WPA
 
