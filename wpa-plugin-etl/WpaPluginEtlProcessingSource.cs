@@ -49,7 +49,7 @@ namespace wpa_plugin_etl
         {
             return new ProcessingSourceInfo
             {
-                CopyrightNotice = "Linaro.org 2024",
+                CopyrightNotice = "Arm Ltd 2024",
 
                 LicenseInfo = new LicenseInfo
                 {
