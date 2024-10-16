@@ -55,7 +55,7 @@ namespace wpa_plugin_etl
                 {
                     Name = "BSD 3-Clause License",
                     Text = "Please see the link for the full license text.",
-                    Uri = "https://gitlab.com/everton.constantino/wpa-plugin-etl/-/raw/master/LICENSE",
+                    Uri = "https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl/blob/master/LICENSE",
                 },
 
                 Owners = new[]
@@ -72,7 +72,7 @@ namespace wpa_plugin_etl
 
                 ProjectInfo = new ProjectInfo
                 {
-                    Uri = "https://gitlab.com/everton.constantino/wpa-plugin-etl",
+                    Uri = "https://github.com/arm-developer-tools/windowsperf-wpa-plugin-etl",
                 },
             };
         }
